@@ -102,6 +102,7 @@ header {
 }
 
 body.state-raspando .count-number { color: var(--blue); }
+body.state-cancelado .count-number { color: var(--text-muted); }
 body.state-completado .count-number { color: var(--green); }
 
 .count-label {
@@ -120,6 +121,7 @@ body.state-completado .count-number { color: var(--green); }
 }
 
 body.state-raspando .status-text { color: var(--blue); }
+body.state-cancelado .status-text { color: var(--text-muted); }
 body.state-completado .status-text { color: var(--green); }
 body.state-error .status-text { color: var(--red); }
 
@@ -162,6 +164,7 @@ body.state-raspando .progress-bar-wrap { opacity: 1; }
   scrollbar-color: var(--border) transparent;
 }
 
+body.state-cancelado .leads-preview,
 body.state-completado .leads-preview,
 body.state-raspando .leads-preview { display: flex; }
 
@@ -283,9 +286,52 @@ body.state-raspando #btn-scrape  { display: none; }
 body.state-raspando #btn-stop    { display: inline-flex; }
 
 /* Completado */
+body.state-cancelado .actions-secondary { display: flex; }
+body.state-cancelado #btn-export { display: inline-flex; }
+body.state-cancelado #btn-clear  { display: inline-flex; }
 body.state-completado .actions-secondary { display: flex; }
 body.state-completado #btn-export { display: inline-flex; }
 body.state-completado #btn-clear  { display: inline-flex; }
 
 /* Error */
 body.state-error #btn-export { display: none; }
+
+/* ── Toggle Email ────────────────────────────────────── */
+.option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--blue);
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+
+.option-hint {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ── Estado enriqueciendo — mismo look que raspando ─── */
+body.state-enriqueciendo .count-number      { color: var(--blue); }
+body.state-enriqueciendo .status-text       { color: var(--blue); }
+body.state-enriqueciendo .progress-bar-wrap { opacity: 1; }
+body.state-enriqueciendo #btn-scrape        { display: none; }
+body.state-enriqueciendo #btn-stop          { display: inline-flex; }
+body.state-enriqueciendo .leads-preview     { display: flex; }

@@ -13,6 +13,7 @@ const els = {
   btnClear:      $('btn-clear'),
   panelMain:     $('panel-main'),
   panelNoMaps:   $('panel-no-maps'),
+  toggleEmail:   $('toggle-email'),
 };
 
 let cachedLeads = [];
@@ -23,11 +24,15 @@ function setState(state, opts = {}) {
   document.body.className = state ? `state-${state}` : '';
 
   const messages = {
-    default:     'Listo para raspar',
-    raspando:    'Raspando resultados…',
-    completado:  `Completado · ${opts.count ?? cachedLeads.length} leads`,
-    error:       'Ocurrió un error',
-    'no-maps':   '',
+    default:        'Listo para raspar',
+    raspando:       'Raspando resultados…',
+    enriqueciendo:  opts.total
+                      ? `Enriqueciendo ${opts.current}/${opts.total}…`
+                      : 'Enriqueciendo resultados…',
+    cancelado:      `Cancelado · ${opts.count ?? cachedLeads.length} leads`,
+    completado:     `Completado · ${opts.count ?? cachedLeads.length} leads`,
+    error:          'Ocurrió un error',
+    'no-maps':      '',
   };
 
   els.statusText.textContent = messages[state] ?? '';
@@ -80,9 +85,13 @@ async function init() {
   if (scrapeState?.status === 'completado') {
     setState('completado', { count: cachedLeads.length });
     renderPreview(cachedLeads);
+  } else if (scrapeState?.status === 'cancelado') {
+    setState('cancelado', { count: cachedLeads.length });
+    renderPreview(cachedLeads);
   } else if (scrapeState?.status === 'raspando') {
-    // Scraping en curso (tab activa, popup se reabrió)
     setState('raspando');
+  } else if (scrapeState?.status === 'enriqueciendo') {
+    setState('enriqueciendo', { current: scrapeState.current, total: scrapeState.total });
   } else if (scrapeState?.status === 'error') {
     setState('error', { error: scrapeState.error });
   } else {
@@ -94,7 +103,11 @@ async function init() {
 
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === 'SCRAPE_STATUS') {
-    setState('raspando');
+    if (msg.status === 'enriqueciendo') {
+      setState('enriqueciendo', { current: msg.current, total: msg.total });
+    } else {
+      setState('raspando');
+    }
     setCount(msg.count);
   }
 
@@ -102,6 +115,13 @@ chrome.runtime.onMessage.addListener(msg => {
     cachedLeads = msg.leads;
     setCount(msg.count);
     setState('completado', { count: msg.count });
+    renderPreview(cachedLeads);
+  }
+
+  if (msg.type === 'SCRAPE_CANCELED') {
+    cachedLeads = msg.leads;
+    setCount(msg.count);
+    setState('cancelado', { count: msg.count });
     renderPreview(cachedLeads);
   }
 
@@ -116,11 +136,13 @@ els.btnScrape.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
 
+  const fetchEmail = els.toggleEmail?.checked || false;
+
   setState('raspando');
   setCount(0);
   els.leadsPreview.innerHTML = '';
 
-  chrome.tabs.sendMessage(tab.id, { type: 'START_SCRAPE' }, resp => {
+  chrome.tabs.sendMessage(tab.id, { type: 'START_SCRAPE', fetchEmail }, resp => {
     if (chrome.runtime.lastError || !resp?.ok) {
       setState('error', { error: resp?.error || 'No se pudo iniciar el raspado. Recargá la página de Maps e intentá de nuevo.' });
     }
@@ -130,7 +152,7 @@ els.btnScrape.addEventListener('click', async () => {
 els.btnStop.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: 'STOP_SCRAPE' });
-  setState(cachedLeads.length ? 'completado' : 'default');
+  setState('cancelado', { count: cachedLeads.length });
 });
 
 els.btnExport.addEventListener('click', () => {
@@ -149,10 +171,11 @@ els.btnClear.addEventListener('click', async () => {
 // ── Exportar CSV ───────────────────────────────────────
 
 function exportToCSV(leads) {
-  const headers = ['Nombre', 'Categoría', 'Calificación', 'Reseñas', 'Dirección', 'URL Maps', 'Fecha'];
+  const headers = ['Nombre', 'Categoría', 'Calificación', 'Reseñas', 'Dirección',
+                   'Teléfono', 'Sitio Web', 'Email', 'URL Maps', 'Fecha'];
   const rows = leads.map(lead =>
-    [lead.nombre, lead.categoria, lead.calificacion, lead.resenas,
-     lead.direccion, lead.url_maps, lead.fecha_scraping]
+    [lead.nombre, lead.categoria, lead.calificacion, lead.resenas, lead.direccion,
+     lead.telefono, lead.sitio_web, lead.email, lead.url_maps, lead.fecha_scraping]
     .map(val => `"${(val || '').replace(/"/g, '""')}"`)
     .join(',')
   );
