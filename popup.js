@@ -25,11 +25,11 @@ let cachedLeads = [];
 // Reemplazar REPORT_FORM_URL con la URL real del form después de crearlo.
 // Para obtener los entry IDs: abrir el form → "⋮" → "Obtener enlace pre-llenado"
 // → completar los campos → copiar la URL generada.
-const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/TU_FORM_ID/viewform';
+const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfKYokGFbmF5AK0Pg-wyeJ5OrydyDp-V7PiXN2S7yjSXDxHWQ/viewform';
 const REPORT_FIELDS = {
-  version:       'entry.XXXXXXXXXX',  // campo "Versión"
-  selectorHealth:'entry.XXXXXXXXXX',  // campo "Estado de selectores"
-  sessionInfo:   'entry.XXXXXXXXXX',  // campo "Información de sesión"
+  version:       'entry.930966518',  // campo "Versión"
+  selectorHealth:'entry.510131981',  // campo "Estado de selectores"
+  sessionInfo:   'entry.1381771896',  // campo "Información de sesión"
 };
 
 const EXPORT_COLUMNS = [
