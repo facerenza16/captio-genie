@@ -319,8 +319,14 @@ async function scrapeWithScroll(fetchEmail) {
     return;
   }
 
-  if (stopRequested && !fetchEmail) {
-    finishCanceled(allLeads);
+  if (!fetchEmail) {
+    isRunning = false;
+    currentPhase = 'idle';
+    chrome.runtime.sendMessage({
+      type: 'SCRAPE_DONE',
+      leads: buildExportLeads(allLeads),
+      count: allLeads.length,
+    });
     return;
   }
 
@@ -333,11 +339,6 @@ async function scrapeWithScroll(fetchEmail) {
   await enrichLeads(allLeads, fetchEmail);
 
   if (isCancelled()) {
-    finishCanceled(allLeads);
-    return;
-  }
-
-  if (stopRequested) {
     finishCanceled(allLeads);
     return;
   }

@@ -1,0 +1,16 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="48" height="48" rx="10" fill="#FFFFFF" stroke="#E8E8E8" stroke-width=".5"></rect>
+  <defs><clipPath id="netclip48"><circle cx="24" cy="23" r="11"></circle></clipPath></defs>
+  <circle cx="24" cy="23" r="11" stroke="#1A1A1A" stroke-width="1.8" fill="none"></circle>
+  <line x1="13" y1="19" x2="35" y2="19" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)" stroke-opacity=".5"></line>
+  <line x1="13" y1="23" x2="35" y2="23" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)"></line>
+  <line x1="13" y1="27" x2="35" y2="27" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)" stroke-opacity=".5"></line>
+  <line x1="20" y1="12" x2="20" y2="34" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)" stroke-opacity=".5"></line>
+  <line x1="24" y1="12" x2="24" y2="34" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)"></line>
+  <line x1="28" y1="12" x2="28" y2="34" stroke="#1A1A1A" stroke-width="1.2" clip-path="url(#netclip48)" stroke-opacity=".5"></line>
+  <path d="M 19 33 Q 24 39 29 33" stroke="#1A1A1A" stroke-width="1.6" fill="none" stroke-linecap="round"></path>
+  <line x1="24" y1="38.5" x2="24" y2="41.5" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"></line>
+  <circle cx="37" cy="9" r="1.2" fill="#888888"></circle>
+  <line x1="37" y1="5" x2="37" y2="7.5" stroke="#888888" stroke-width="1.2" stroke-linecap="round"></line>
+  <line x1="33" y1="9" x2="35.5" y2="9" stroke="#888888" stroke-width="1.2" stroke-linecap="round"></line>
+</svg>

@@ -3,20 +3,23 @@
 const $ = id => document.getElementById(id);
 
 const els = {
-  statusText:    $('status-text'),
-  leadCount:     $('lead-count'),
-  leadsPreview:  $('leads-preview'),
-  errorMsg:      $('error-msg'),
-  btnScrape:     $('btn-scrape'),
-  btnStop:       $('btn-stop'),
-  btnExportExcel:$('btn-export-excel'),
-  btnExportCsv:  $('btn-export-csv'),
-  btnClear:      $('btn-clear'),
-  btnReport:     $('btn-report'),
-  panelMain:     $('panel-main'),
-  panelNoMaps:   $('panel-no-maps'),
-  toggleEmail:   $('toggle-email'),
-  emailHint:     $('email-hint'),
+  statusText:     $('status-text'),
+  statusChip:     $('status-chip'),
+  leadCount:      $('lead-count'),
+  leadsPreview:   $('leads-preview'),
+  resultsMeta:    $('results-meta'),
+  errorMsg:       $('error-msg'),
+  btnScrape:      $('btn-scrape'),
+  btnStop:        $('btn-stop'),
+  btnExportExcel: $('btn-export-excel'),
+  btnExportCsv:   $('btn-export-csv'),
+  btnClear:       $('btn-clear'),
+  btnReport:      $('btn-report'),
+  btnReportIcon:  $('btn-report-icon'),
+  panelMain:      $('panel-main'),
+  panelNoMaps:    $('panel-no-maps'),
+  toggleEmail:    $('toggle-email'),
+  emailHint:      $('email-hint'),
 };
 
 let cachedLeads = [];
@@ -27,9 +30,9 @@ let cachedLeads = [];
 // → completar los campos → copiar la URL generada.
 const REPORT_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfKYokGFbmF5AK0Pg-wyeJ5OrydyDp-V7PiXN2S7yjSXDxHWQ/viewform';
 const REPORT_FIELDS = {
-  version:       'entry.930966518',  // campo "Versión"
-  selectorHealth:'entry.510131981',  // campo "Estado de selectores"
-  sessionInfo:   'entry.1381771896',  // campo "Información de sesión"
+  version:       'entry.930966518',
+  selectorHealth:'entry.510131981',
+  sessionInfo:   'entry.1381771896',
 };
 
 const EXPORT_COLUMNS = [
@@ -45,25 +48,55 @@ const EXPORT_COLUMNS = [
   { header: 'Fecha', key: 'fecha_scraping', width: 95 },
 ];
 
+// ── Mapa de chips por estado ────────────────────────────
+const CHIP_CLASS = {
+  default:       'chip chip-idle',
+  raspando:      'chip chip-running',
+  enriqueciendo: 'chip chip-running',
+  deteniendo:    'chip chip-running',
+  cancelado:     'chip chip-idle',
+  completado:    'chip chip-done',
+  error:         'chip chip-error',
+  'no-maps':     'chip chip-idle',
+};
+
+const CHIP_TEXT = {
+  default:       'Listo',
+  raspando:      'Capturando',
+  enriqueciendo: 'Enriqueciendo',
+  deteniendo:    'Deteniendo',
+  cancelado:     'Cancelado',
+  completado:    'Completado',
+  error:         'Error',
+  'no-maps':     'Sin Maps',
+};
+
 // ── Estado visual ──────────────────────────────────────
 
 function setState(state, opts = {}) {
   document.body.className = state ? `state-${state}` : '';
 
-  const messages = {
-    default:        'Listo para capturar',
-    raspando:       'Raspando resultados…',
-    deteniendo:     'Deteniendo búsqueda y finalizando leads encontrados…',
-    enriqueciendo:  opts.total
-                      ? `Enriqueciendo ${opts.current}/${opts.total}…`
-                      : 'Enriqueciendo resultados…',
-    cancelado:      `Cancelado · ${opts.count ?? cachedLeads.length} leads`,
-    completado:     `Completado · ${opts.count ?? cachedLeads.length} leads`,
-    error:          'Ocurrió un error',
-    'no-maps':      '',
-  };
+  // Chip: clase + texto
+  if (els.statusChip) {
+    const cls = CHIP_CLASS[state] ?? CHIP_CLASS.default;
+    els.statusChip.className = cls;
+  }
 
-  els.statusText.textContent = messages[state] ?? '';
+  let chipText = CHIP_TEXT[state] ?? CHIP_TEXT.default;
+  if (state === 'enriqueciendo' && opts.total) {
+    chipText = `Enriqueciendo ${opts.current}/${opts.total}`;
+  }
+  if (els.statusText) els.statusText.textContent = chipText;
+
+  // Meta de resultados en sección
+  if (els.resultsMeta) {
+    const total = opts.count ?? cachedLeads.length;
+    if (state === 'completado' || state === 'cancelado' || state === 'raspando' || state === 'enriqueciendo' || state === 'deteniendo') {
+      els.resultsMeta.textContent = total > 5 ? `Mostrando últimos 5 de ${total}` : '';
+    } else {
+      els.resultsMeta.textContent = '';
+    }
+  }
 
   if (opts.error) {
     els.errorMsg.textContent = opts.error;
@@ -78,13 +111,13 @@ function renderPreview(leads) {
   const last = leads.slice(-5).reverse();
   els.leadsPreview.innerHTML = '';
   last.forEach(lead => {
-    const card = document.createElement('div');
-    card.className = 'lead-card';
-    card.innerHTML = `
-      <div class="lead-card-name">${escapeHtml(lead.nombre)}</div>
-      <div class="lead-card-meta">${escapeHtml(lead.categoria || lead.direccion || '')}</div>
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    row.innerHTML = `
+      <div class="result-name">${escapeHtml(lead.nombre)}</div>
+      <div class="result-meta">${escapeHtml(lead.categoria || lead.direccion || '')}</div>
     `;
-    els.leadsPreview.appendChild(card);
+    els.leadsPreview.appendChild(row);
   });
 }
 
@@ -104,6 +137,7 @@ async function init() {
 
   if (!onMaps) {
     els.panelNoMaps.classList.add('visible');
+    setState('no-maps');
     return;
   }
 
@@ -136,9 +170,9 @@ async function init() {
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === 'SCRAPE_STATUS') {
     if (msg.status === 'enriqueciendo') {
-      setState('enriqueciendo', { current: msg.current, total: msg.total });
+      setState('enriqueciendo', { current: msg.current, total: msg.total, count: msg.count });
     } else {
-      setState('raspando');
+      setState('raspando', { count: msg.count });
     }
     setCount(msg.count);
   }
@@ -205,7 +239,7 @@ els.btnClear.addEventListener('click', async () => {
   setState('default');
 });
 
-els.btnReport.addEventListener('click', async () => {
+async function openReportForm() {
   const { selectorHealth, scrapeState, leads } = await chrome.storage.local.get(
     ['selectorHealth', 'scrapeState', 'leads']
   );
@@ -217,7 +251,10 @@ els.btnReport.addEventListener('click', async () => {
     [REPORT_FIELDS.sessionInfo]: `Estado: ${scrapeState?.status ?? 'n/a'} | Leads: ${leads?.length ?? 0}`,
   });
   chrome.tabs.create({ url: `${REPORT_FORM_URL}?usp=pp_url&${params.toString()}` });
-});
+}
+
+els.btnReport.addEventListener('click', openReportForm);
+els.btnReportIcon.addEventListener('click', openReportForm);
 
 // ── Exportar CSV ───────────────────────────────────────
 
